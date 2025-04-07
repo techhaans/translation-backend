@@ -11,7 +11,8 @@
 	<groupId>com.example</groupId>
 	<artifactId>translation-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>translation-backend</name>
+    <packaging>pom</packaging>
+    <name>translation-backend</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -20,7 +21,16 @@
 	<developers>
 		<developer/>
 	</developers>
-	<scm>
+    <modules>
+        <module>application</module>
+        <module>dc</module>
+		<module>domain</module>
+        <module>dc/api</module>
+		<module>dc/facade</module>
+		<module>dc/facade-impl</module>
+		<module>db</module>
+	</modules>
+    <scm>
 		<connection/>
 		<developerConnection/>
 		<tag/>
