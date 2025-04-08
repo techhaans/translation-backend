@@ -48,8 +48,18 @@
         <groupId>com.example</groupId>
         <artifactId>api</artifactId>
         <version>0.0.1-SNAPSHOT</version>
-
     </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>facade</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>facade-impl</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
 
     </dependencies>
 
@@ -58,6 +68,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.example.demo.Application</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

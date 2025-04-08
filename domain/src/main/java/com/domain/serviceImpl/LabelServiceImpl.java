@@ -1,6 +1,6 @@
 package com.domain.serviceImpl;
 
-import com.domain.service.LabelService;
+import com.dc.domain.service.LabelService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

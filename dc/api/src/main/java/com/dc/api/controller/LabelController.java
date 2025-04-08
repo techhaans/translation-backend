@@ -16,10 +16,10 @@ import java.util.Map;
 @Tag(name = "Label API", description = "Manage Labels and Translations")
 public class LabelController {
 
-    @Autowired
+   @Autowired
     private LabelFacade labelFacade;
 
-    @PostMapping
+    @GetMapping
     @Operation(summary = "Create or update labels and translations")
     public ResponseEntity<String> createOrUpdateLabels(
             @RequestHeader("default-language") String defaultLanguage,
@@ -30,4 +30,6 @@ public class LabelController {
         labelFacade.processLabels(customerId, defaultLanguage, languageList, labelData);
         return ResponseEntity.ok("Labels processed successfully");
     }
+
+
 }

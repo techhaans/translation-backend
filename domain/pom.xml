@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>facade-impl</artifactId>
+    <artifactId>domain</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
@@ -19,16 +19,25 @@
     <dependencies>
         <dependency>
             <groupId>com.example</groupId>
-            <artifactId>domain</artifactId>
+            <artifactId>facade-impl</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>domain</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-    </dependencies>
 
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- Override the inherited spring-boot-maven-plugin to disable it in this module -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <phase>none</phase> <!-- disables execution -->
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
