@@ -15,7 +15,7 @@ CREATE TABLE customer (
     cid SERIAL PRIMARY KEY,
     cname VARCHAR(255) NOT NULL,
     status VARCHAR(50),
-    user_id INT REFERENCES users(id),
+    user_id INT REFERENCES user_table(id),
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -67,3 +67,9 @@ CREATE TABLE label_translation (
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO customer (cid, cname, status, user_id)
+VALUES (1, 'Test Customer', 'ACTIVE', 1);
+
+INSERT INTO user_table (name, role, password)
+VALUES ('Test User', 'ADMIN', 'password123');

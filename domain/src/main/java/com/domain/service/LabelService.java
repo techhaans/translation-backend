@@ -1,4 +1,4 @@
-package com.dc.domain.service;
+package com.domain.service;
 
 import java.util.List;
 import java.util.Map;
