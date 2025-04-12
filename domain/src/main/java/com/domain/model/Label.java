@@ -14,11 +14,8 @@ public class Label {
 
     @Column(name = "label_name", nullable = false)
     private String labelName;
-
-    @ManyToOne
-    @JoinColumn(name = "label_translation_id",referencedColumnName = "label_translation_id")
-    private LabelTranslation labelTranslation;
-
+    @Column(name = "label_key", nullable = false)
+    private String labelKey;
     @ManyToOne
     @JoinColumn(name = "cid", referencedColumnName = "cid")
     private Customer customer;
@@ -31,10 +28,10 @@ public class Label {
 
     public Label() {}
 
-    public Label(Integer labelId, String labelName, LabelTranslation labelTranslation, Customer customer, LocalDateTime createdDate, LocalDateTime updatedDate) {
+    public Label(Integer labelId, String labelName, String labelKey, Customer customer, LocalDateTime createdDate, LocalDateTime updatedDate) {
         this.labelId = labelId;
         this.labelName = labelName;
-        this.labelTranslation = labelTranslation;
+        this.labelKey = labelKey;
         this.customer = customer;
         this.createdDate = createdDate;
         this.updatedDate = updatedDate;
@@ -44,8 +41,14 @@ public class Label {
     public void setLabelId(Integer labelId) { this.labelId = labelId; }
     public String getLabelName() { return labelName; }
     public void setLabelName(String labelName) { this.labelName = labelName; }
-    public LabelTranslation getLabelTranslation() { return labelTranslation; }
-    public void setLabelTranslation(LabelTranslation labelTranslation) { this.labelTranslation = labelTranslation; }
+
+    public String getLabelKey() {
+        return labelKey;
+    }
+
+    public void setLabelKey(String labelKey) {
+        this.labelKey = labelKey;
+    }
     public Customer getCustomer() { return customer; }
     public void setCustomer(Customer customer) { this.customer = customer; }
     public LocalDateTime getCreatedDate() { return createdDate; }
@@ -58,7 +61,7 @@ public class Label {
         return "Label{" +
                 "labelId=" + labelId +
                 ", labelName='" + labelName + '\'' +
-                ", labelTranslation=" + labelTranslation +
+                ", labelKey='" + labelKey + '\'' +
                 ", customer=" + customer +
                 ", createdDate=" + createdDate +
                 ", updatedDate=" + updatedDate +

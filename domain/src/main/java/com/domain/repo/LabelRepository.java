@@ -9,9 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface LabelRepository extends JpaRepository<Label, Integer> {
-    Optional<Label> findByLabelNameAndCustomerCid(String labelName, Integer cid);
-    List<Label> findAllByCustomerCid(Integer cid);
-
     List<Label> findByCustomer_Cid(java.lang.Integer customerId);
 }
 

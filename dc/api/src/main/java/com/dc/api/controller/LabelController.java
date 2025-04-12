@@ -1,6 +1,7 @@
 package com.dc.api.controller;
 
 import com.dc.facade.fd.LabelFacade;
+import com.domain.dto.LabelResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,15 +21,15 @@ public class LabelController {
 
     @PostMapping
     @Operation(summary = "Create or update labels and translations")
-    public ResponseEntity<String> createOrUpdateLabels(
-            @RequestHeader(value = "default-language", required = false, defaultValue = "en") String defaultLanguage,
-            @RequestHeader(value = "customer-id", required = false, defaultValue = "1") Integer customerId,
-            @RequestHeader(value = "language-list", required = false) List<String> languageList,
-            @RequestBody Map<String, String> labelData) {
+    public ResponseEntity<LabelResponseDTO> createOrUpdateLabels(
+            @RequestHeader("customerId") Integer customerId,
+            @RequestBody Map<String, String> labelKeyValuePairs) {
 
-        labelFacade.processLabels(customerId, defaultLanguage, languageList, labelData);
-        return ResponseEntity.ok("Labels processed successfully");
+        LabelResponseDTO response = labelFacade.processLabels(customerId, labelKeyValuePairs);
+        return ResponseEntity.ok(response);
     }
+
+
 
 
 }

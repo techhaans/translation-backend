@@ -1,15 +1,19 @@
 package com.domain.serviceImpl;
 
+import com.domain.dto.LabelRequestDTO;
+import com.domain.dto.LabelResponseDTO;
+import com.domain.dto.LabelTranslationRequestDTO;
+import com.domain.dto.LabelTranslationResponseDTO;
+import com.domain.model.*;
 import com.domain.service.LabelService;
-import com.domain.model.Customer;
-import com.domain.model.Label;
-import com.domain.model.LabelTranslation;
 import com.domain.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class LabelServiceImpl implements LabelService {
@@ -27,64 +31,83 @@ public class LabelServiceImpl implements LabelService {
 
     @Autowired
     private ProofReaderRepository proofReadersRepository;
+    @Autowired
+    private CustomerLangRepository customerLangRepository;
+    private String extractLabelNameFromKey(String labelKey) {
+        if (labelKey == null || labelKey.isEmpty()) return "";
+        String[] parts = labelKey.split("\\.");
+        return parts[parts.length - 1].replace("_", " ");
+    }
 
     @Override
-    public void createOrUpdateLabels(Integer customerId, String defaultLanguage, List<String> languageList, Map<String, String> labelData) {
-        // Step 1: Validate Customer
-        Optional<Customer> customerOpt = customerRepository.findById(customerId);
-        if (customerOpt.isEmpty()) {
-            throw new RuntimeException("Customer not found with ID: " + customerId);
-        }
-        Customer customer = customerOpt.get();
+    public LabelResponseDTO createOrUpdateLabels(Integer customerId, Map<String, String> labels) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        // Step 2: Fetch all existing labels for the customer
-        List<Label> existingLabels = labelRepository.findByCustomer_Cid(customerId);
-        Map<String, Label> existingLabelMap = new HashMap<>();
-        for (Label label : existingLabels) {
-            existingLabelMap.put(label.getLabelName(), label);
+        List<CustomerLang> customerLangs = customerLangRepository.findByCustomer_Cid(customerId);
+        if (customerLangs.isEmpty()) {
+            throw new RuntimeException("No languages found for customer");
         }
 
-        // Step 3: Process incoming label data
-        for (Map.Entry<String, String> entry : labelData.entrySet()) {
-            String labelKey = entry.getKey();
-            String defaultTranslation = entry.getValue();
+        CustomerLang defaultLang = (CustomerLang) customerLangRepository
+                .findByCustomer_CidAndIsDefaultTrue(customerId)
+                .orElseThrow(() -> new RuntimeException("Default language not set"));
 
-            Label label = existingLabelMap.get(labelKey);
-            if (label == null) {
-                // New Label
+        String defaultLanguageCode = defaultLang.getLanguage().getLanguageKey();
+
+        Map<String, Label> labelMap = labelRepository.findByCustomer_Cid(customerId).stream()
+                .collect(Collectors.toMap(Label::getLabelKey, Function.identity()));
+
+        ProofReaders approvedBy = proofReadersRepository.findByRole("ADMIN")
+                .orElseThrow(() -> new RuntimeException("No approver found"));
+
+        List<LabelTranslationResponseDTO> responseLanguages = new ArrayList<>();
+
+        for (CustomerLang lang : customerLangs) {
+            String langCode = lang.getLanguage().getLanguageKey();
+            Map<String, String> translatedMap = new HashMap<>();
+
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
+                String labelKey = entry.getKey();
+                String value = entry.getValue();
+
+                Label label = labelMap.computeIfAbsent(labelKey, k -> {
+                    Label newLabel = new Label();
+                    newLabel.setLabelKey(labelKey);
+                    newLabel.setLabelName(extractLabelNameFromKey(labelKey));
+                    newLabel.setCustomer(customer);
+                    newLabel.setCreatedDate(LocalDateTime.now());
+                    newLabel.setUpdatedDate(LocalDateTime.now());
+                    return labelRepository.save(newLabel);
+                });
+
                 LabelTranslation translation = new LabelTranslation();
-                translation.setLanguage(defaultLanguage);
-                translation.setLabelTranslated(defaultTranslation);
+                translation.setLabel(labelKey);
+                translation.setLanguageCode(langCode);
+                translation.setLabelTranslated(value); // Will call ChatGPT later
                 translation.setStatus("ACTIVE");
+                translation.setApprovedBy(approvedBy);
                 translation.setCreatedDate(LocalDateTime.now());
                 translation.setUpdatedDate(LocalDateTime.now());
+                translation.setTranslations("{}");
+
                 labelTranslationRepository.save(translation);
-
-                label = new Label();
-                label.setLabelName(labelKey);
-                label.setCustomer(customer);
-                label.setLabelTranslation(translation);
-                label.setCreatedDate(LocalDateTime.now());
-                label.setUpdatedDate(LocalDateTime.now());
-                labelRepository.save(label);
-            } else {
-                // Existing label - update translation if needed
-                LabelTranslation translation = label.getLabelTranslation();
-                if (!translation.getLabelTranslated().equals(defaultTranslation)) {
-                    translation.setLabelTranslated(defaultTranslation);
-                    translation.setUpdatedDate(LocalDateTime.now());
-                    labelTranslationRepository.save(translation);
-                }
+                translatedMap.put(labelKey, value);
             }
+
+            LabelTranslationResponseDTO res = new LabelTranslationResponseDTO();
+            res.setLanguageCode(langCode);
+            res.setTranslations(translatedMap);
+            responseLanguages.add(res);
         }
 
-        // Step 4: Inactivate labels that are not present in the request
-        Set<String> incomingLabels = labelData.keySet();
-        for (Label existing : existingLabels) {
-            if (!incomingLabels.contains(existing.getLabelName())) {
-                existing.setUpdatedDate(LocalDateTime.now());
-                labelRepository.save(existing);
-            }
-        }
+        LabelResponseDTO response = new LabelResponseDTO();
+        response.setCustomerId(customerId);
+        response.setDefaultLanguageCode(defaultLanguageCode);
+        response.setLanguages(responseLanguages);
+
+        return response;
     }
+
+
 }
