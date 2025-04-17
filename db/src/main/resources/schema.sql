@@ -59,6 +59,8 @@ CREATE TABLE labels (
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP );
 
+
+
 ALTER TABLE labels ADD COLUMN label_key VARCHAR(255) NOT NULL DEFAULT '';
 
 
@@ -140,4 +142,7 @@ INSERT INTO customerlang (customer_id, language_id, is_default) VALUES
 (1, 1, TRUE),
 (1, 2, FALSE),
 (1, 3, FALSE);
+
+ALTER TABLE customer ADD COLUMN cuid UUID NOT NULL DEFAULT gen_random_uuid();
+CREATE UNIQUE INDEX idx_customer_cuid ON customer(cuid);
 

@@ -2,9 +2,11 @@ package com.domain.service;
 
 import com.domain.dto.LabelResponseDTO;
 
-import java.util.Map;
+import java.util.*;
 
 public interface LabelService {
-    LabelResponseDTO createOrUpdateLabels(Integer customerId, Map<String, String> labels);
+
+
+    LabelResponseDTO createOrUpdateLabels(UUID customerCuid, Map<String, String> labels);
 
 }

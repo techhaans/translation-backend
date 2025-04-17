@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/labels")
@@ -22,10 +22,10 @@ public class LabelController {
     @PostMapping
     @Operation(summary = "Create or update labels and translations")
     public ResponseEntity<LabelResponseDTO> createOrUpdateLabels(
-            @RequestHeader("customerId") Integer customerId,
+            @RequestHeader("customerUId") UUID customerCuid,
             @RequestBody Map<String, String> labelKeyValuePairs) {
 
-        LabelResponseDTO response = labelFacade.processLabels(customerId, labelKeyValuePairs);
+        LabelResponseDTO response = labelFacade.processLabels(customerCuid, labelKeyValuePairs);
         return ResponseEntity.ok(response);
     }
 

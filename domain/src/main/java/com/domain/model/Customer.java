@@ -3,6 +3,7 @@ package com.domain.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "customer")
@@ -11,6 +12,16 @@ public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int cid;
+
+    @Column(name = "cuid", unique = true, nullable = false, updatable = false)
+    private UUID cuid;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.cuid == null) {
+            this.cuid = UUID.randomUUID();
+        }
+    }
 
     @Column(name = "cname", nullable = false)
     private String cname;
@@ -46,6 +57,14 @@ public class Customer {
 
     public void setCid(int cid) {
         this.cid = cid;
+    }
+
+    public UUID getCuid() {
+        return cuid;
+    }
+
+    public void setCuid(UUID cuid) {
+        this.cuid = cuid;
     }
 
     public String getCname() {
