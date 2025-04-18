@@ -1,15 +1,15 @@
 package com.dc.api.controller;
 
 import com.dc.facade.fd.LabelFacade;
+import com.domain.dto.LabelResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/labels")
@@ -19,17 +19,17 @@ public class LabelController {
    @Autowired
     private LabelFacade labelFacade;
 
-    @GetMapping
+    @PostMapping
     @Operation(summary = "Create or update labels and translations")
-    public ResponseEntity<String> createOrUpdateLabels(
-            @RequestHeader("default-language") String defaultLanguage,
-            @RequestHeader("customer-id") Integer customerId,
-            @RequestHeader("language-list") List<String> languageList,
-            @RequestBody Map<String, String> labelData) {
+    public ResponseEntity<LabelResponseDTO> createOrUpdateLabels(
+            @RequestHeader("customerUId") UUID customerCuid,
+            @RequestBody Map<String, String> labelKeyValuePairs) {
 
-        labelFacade.processLabels(customerId, defaultLanguage, languageList, labelData);
-        return ResponseEntity.ok("Labels processed successfully");
+        LabelResponseDTO response = labelFacade.processLabels(customerCuid, labelKeyValuePairs);
+        return ResponseEntity.ok(response);
     }
+
+
 
 
 }
