@@ -16,20 +16,20 @@ import java.util.*;
 @Tag(name = "Label API", description = "Manage Labels and Translations")
 public class LabelController {
 
-   @Autowired
+    @Autowired
     private LabelFacade labelFacade;
 
     @PostMapping
     @Operation(summary = "Create or update labels and translations")
     public ResponseEntity<LabelResponseDTO> createOrUpdateLabels(
             @RequestHeader("customerUId") UUID customerCuid,
+
+
             @RequestBody Map<String, String> labelKeyValuePairs) {
 
         LabelResponseDTO response = labelFacade.processLabels(customerCuid, labelKeyValuePairs);
         return ResponseEntity.ok(response);
     }
-
-
 
 
 }

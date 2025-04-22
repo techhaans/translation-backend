@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.WebClient;
 
-
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.domain.repo")
 @EntityScan(basePackages = "com.domain.model")
@@ -23,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 		"com.domain.util"
 })
 public class Application {
-
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
@@ -32,7 +30,4 @@ public class Application {
 	public WebClient.Builder webClientBuilder() {
 		return WebClient.builder();
 	}
-
-
-
 }
