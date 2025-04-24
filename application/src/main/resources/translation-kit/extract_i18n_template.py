@@ -1,19 +1,27 @@
 import os
 import re
 import json
+import sys
 import requests
 
 # ==== Config ====
-html_folder = "../"  # Folder where all your .html files are
-translation_dir = "i18n"
+if len(sys.argv) < 2:
+    print("Please provide the path to the cloned repo. Example:")
+    print("python extract_i18n_template.py temp/<uuid>")
+    sys.exit(1)
+
+html_folder = sys.argv[1]
+script_dir = os.path.dirname(os.path.abspath(__file__))
+translation_dir = os.path.join(script_dir, "i18n")
 os.makedirs(translation_dir, exist_ok=True)
-translation_file = f"{translation_dir}/_en.js"
+
+translation_file = os.path.join(translation_dir, "_en.js")
 customer_id = "CUSTOMER_ID_PLACEHOLDER"
 default_language = "en"
 translation_endpoint = "http://localhost:8082/labels"
 
 headers = {
-    "customerUId": "CUSTOMER_UID_PLACEHOLDER",
+    "customerUId": "afc3c097-9054-49bc-938c-bfbcbd9ea3c7",
     "accept": "application/json",
     "Content-Type": "application/json"
 }
@@ -36,35 +44,35 @@ for html_file in html_files:
     full_path = os.path.join(html_folder, html_file)
     filename_prefix = os.path.splitext(os.path.basename(html_file))[0]
 
-    print(f"🔍 Processing {html_file}...")
+    print(f" Processing {html_file}...")
 
     with open(full_path, "r", encoding="utf-8") as f:
         html = f.read()
 
     translations = {}
+    found_any = False
 
     # Match visible labels
-    label_matches = re.findall(r'<(label|button|span|p|h[1-6])[^>]*?>([^<]+)</\1>', html)
+    label_matches = re.findall(r'<(label|button|span|p|h[1-6])[^>]*?>(.*?)</\1>', html, re.DOTALL)
     for tag, text in label_matches:
         text = text.strip()
         if not text:
             continue
         key = f"label_{counter}"
-        pattern = rf'(<{tag}\b[^>]*?>)\s*{re.escape(text)}\s*</{tag}>'
-        match = re.search(pattern, html)
-        if match:
-            counter += 1
-            translations[key] = text
-            replacement = f'<{tag} data-i18n="{key}"></{tag}>'
-            html = re.sub(pattern, replacement, html, count=1)
+        translations[key] = text
+        replacement = f'<{tag} data-i18n="{key}"></{tag}>'
+        html = re.sub(rf'<{tag}[^>]*?>\s*{re.escape(text)}\s*</{tag}>', replacement, html, count=1)
+        counter += 1
+        found_any = True
 
     # Match placeholders
     placeholder_matches = re.findall(r'<(input|textarea)[^>]*?placeholder="([^"]+)"', html)
     for tag, placeholder in placeholder_matches:
         key = f"placeholder_{counter}"
-        counter += 1
         translations[key] = placeholder
         html = html.replace(f'placeholder="{placeholder}"', f'data-i18n-placeholder="{key}"')
+        counter += 1
+        found_any = True
 
     # Inject translation.js if not already included
     if 'translation.js' not in html:
@@ -82,19 +90,22 @@ for html_file in html_files:
     for k, v in translations.items():
         all_translations[f"{filename_prefix}.{k}"] = v
 
+    if not found_any:
+        print(f" No translatable content found in {html_file}.")
+
 # ==== Step 3: Send POST request ====
 payload = all_translations
 
 try:
-    print("📤 Sending Payload:")
+    print("Sending Payload:")
     print(json.dumps(payload, indent=2))
     res = requests.post(translation_endpoint, json=payload, headers=headers)
     res.raise_for_status()
     response_data = res.json()
-    print("✅ Received response from API")
+    print("Received response from API")
     print(json.dumps(response_data, indent=2))
 except Exception as e:
-    print("❌ Failed to reach API. Error:", e)
+    print("Failed to reach API. Error:", e)
     response_data = {
         "defaultLanguageCode": default_language,
         "languages": [
@@ -117,4 +128,4 @@ for lang in langs:
             simple_key = full_key.split('.')[-1]
             f.write(f'    "{simple_key}": "{value}",\n')
         f.write("};\n")
-    print(f"✅ Generated {file_path}")
+    print(f" Generated {file_path}")

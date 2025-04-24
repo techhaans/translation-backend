@@ -7,6 +7,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.domain.repo")
@@ -19,7 +20,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 		"com.domain.serviceImpl",
 		"com.domain.repo",
 		"com.domain.model",
-		"com.domain.util"
+		"com.domain.util",
+		"com.domain.dto",
+		"com.domain.password",
+		"com.domain.config"
 })
 public class Application {
 	public static void main(String[] args) {
@@ -30,4 +34,10 @@ public class Application {
 	public WebClient.Builder webClientBuilder() {
 		return WebClient.builder();
 	}
+
+	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
 }

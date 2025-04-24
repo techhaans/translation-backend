@@ -146,3 +146,6 @@ INSERT INTO customerlang (customer_id, language_id, is_default) VALUES
 ALTER TABLE customer ADD COLUMN cuid UUID NOT NULL DEFAULT gen_random_uuid();
 CREATE UNIQUE INDEX idx_customer_cuid ON customer(cuid);
 
+ALTER TABLE customer ADD COLUMN country VARCHAR(255);
+ALTER TABLE customer ADD COLUMN membership_type VARCHAR(255);
+

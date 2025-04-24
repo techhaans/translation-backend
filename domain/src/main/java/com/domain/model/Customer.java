@@ -25,6 +25,11 @@ public class Customer {
 
     @Column(name = "cname", nullable = false)
     private String cname;
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "membership_type")
+    private String membershipType;
 
     @Column(name = "status")
     private String status;
@@ -75,6 +80,22 @@ public class Customer {
         this.cname = cname;
     }
 
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getMembershipType() {
+        return membershipType;
+    }
+
+    public void setMembershipType(String membershipType) {
+        this.membershipType = membershipType;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -112,6 +133,8 @@ public class Customer {
         return "Customer{" +
                 "cid=" + cid +
                 ", cname='" + cname + '\'' +
+                ", country='" + country + '\'' +
+                ", membershipType='" + membershipType + '\'' +
                 ", status='" + status + '\'' +
                 ", user=" + user +
                 ", createdDate=" + createdDate +
