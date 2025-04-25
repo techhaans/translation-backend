@@ -17,7 +17,7 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
     public void processGitHubRepo(GitHubRepoRequest request) {
         // Securely form the authenticated repo URL
         String authenticatedUrl = request.getRepoUrl()
-                .replace("https://", "https://" + request.getPersonalAccessToken() + "@");
+                .replace("https://", "https://" + request.getGitUsername() + ":" + request.getPersonalAccessToken() + "@");
 
         // Use a unique temp directory for each operation
         String localPath = "temp/" + UUID.randomUUID();
