@@ -6,12 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/proofreaders")
+@RequestMapping("/proof")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ProofReaderRegistrationController {
     @Autowired
     private ProofReaderRegistrationFacade proofreaderFacade;
 
-    @PostMapping("/register")
+    @PostMapping("/register-proofreader")
     public ResponseEntity<String> registerProofreader(@RequestBody ProofreaderRegistrationRequest request) {
         proofreaderFacade.registerProofreader(request);
         return ResponseEntity.ok("Proofreader registered successfully");

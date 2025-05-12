@@ -2,6 +2,10 @@ package com.domain.service;
 
 import com.domain.model.UserTable;
 
+import java.util.Optional;
+
 public interface UserService {
-    UserTable createUser(String username, String password, String proofreader);
+     Optional<UserTable> login(String name, String password, String role);
+
+     UserTable saveUsernameandpassword(UserTable userTable);
 }

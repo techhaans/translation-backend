@@ -10,11 +10,11 @@ import java.util.UUID;
 
 @Repository
 public interface CustomerLangRepository extends JpaRepository<CustomerLang, Integer> {
-    List<CustomerLang> findByCustomer_Cid(Integer customerId);
 
     Optional<Object> findByCustomer_CidAndIsDefaultTrue(Integer customerId);
 
     List<CustomerLang> findByCustomer_Cuid(UUID customerCuid);
 
     Optional<Object> findByCustomer_CuidAndIsDefaultTrue(UUID customerCuid);
+
 }

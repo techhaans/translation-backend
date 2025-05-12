@@ -2,6 +2,7 @@ package com.dc.api.controller;
 
 import com.dc.facade.fd.CustomerRegistrationFacade;
 import com.domain.dto.CustomerRegistrationRequest;
+import com.domain.dto.CustomerRegistrationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +14,11 @@ public class CustomerRegistrationController {
     private CustomerRegistrationFacade customerRegistrationFacade;
 
     @PostMapping("/register")
-    public String registerCustomer(@RequestBody CustomerRegistrationRequest request) {
-        customerRegistrationFacade.registerCustomer(request);
-        return "Customer registered successfully";
+    public ResponseEntity<CustomerRegistrationResponse> registerCustomer(@RequestBody CustomerRegistrationRequest request) {
+        CustomerRegistrationResponse response = customerRegistrationFacade.registerCustomer(request);
+        return ResponseEntity.ok(response);
     }
+
     @GetMapping
     public ResponseEntity<?> getAllCustomer() {
         return ResponseEntity.ok(customerRegistrationFacade.getAllCustomer());

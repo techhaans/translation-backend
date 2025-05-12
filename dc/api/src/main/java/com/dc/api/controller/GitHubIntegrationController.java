@@ -17,7 +17,7 @@ public class GitHubIntegrationController {
     public GitHubIntegrationController(GitHubIntegrationFacade gitHubIntegrationFacade) {
         this.gitHubIntegrationFacade = gitHubIntegrationFacade;
     }
-
+    
     @PostMapping("/translate")
     public ResponseEntity<String> fetchAndTranslateRepo(@RequestBody GitHubRepoRequest request) {
         System.out.println("👉 Received GitHub request from: " + request.getGitUsername());

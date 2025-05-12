@@ -5,6 +5,11 @@ public class GitHubRepoRequest {
     private String personalAccessToken;
     private String repoUrl;
     private String branch;
+    private String packageName;  // New field for package name
+    private String pageName;
+    private String dropdownId;   // New field for dropdown ID
+
+    // Getter and Setter methods
 
     public String getGitUsername() {
         return gitUsername;
@@ -36,5 +41,29 @@ public class GitHubRepoRequest {
 
     public void setBranch(String branch) {
         this.branch = branch;
+    }
+
+    public String getPackageName() {   // Getter for packageName
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {   // Setter for packageName
+        this.packageName = packageName;
+    }
+
+    public String getDropdownId() {   // Getter for dropdownId
+        return dropdownId;
+    }
+
+    public void setDropdownId(String dropdownId) {   // Setter for dropdownId
+        this.dropdownId = dropdownId;
+    }
+
+    public String getPageName() {
+        return pageName;
+    }
+
+    public void setPageName(String pageName) {
+        this.pageName = pageName;
     }
 }

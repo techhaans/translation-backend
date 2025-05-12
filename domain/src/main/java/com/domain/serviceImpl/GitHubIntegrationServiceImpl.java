@@ -33,7 +33,7 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
             // Step 2: Run the Python translation script
             String scriptPath = Paths.get("application", "src", "main", "resources", "translation-kit", "extract_i18n_template.py").toString();
             System.out.println("🚀 Running Python translation script...");
-            executeCommand(new String[]{"python3", scriptPath, localPath}, null);
+            executeCommand(new String[]{"python3", scriptPath, localPath, "afc3c097-9054-49bc-938c-bfbcbd9ea3c7", request.getPackageName(),request.getPageName(), request.getDropdownId()}, null);
 
             // Step 3: Git operations — add, commit, and push
             System.out.println("✅ Committing translation changes...");

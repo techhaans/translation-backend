@@ -31,4 +31,12 @@ public class LabelResponseDTO {
     public void setLanguages(List<LabelTranslationResponseDTO> languages) {
         this.languages = languages;
     }
+
+    public UUID getCustomerCuid() {
+        return customerCuid;
+    }
+
+    public void setCustomerCuid(UUID customerCuid) {
+        this.customerCuid = customerCuid;
+    }
 }

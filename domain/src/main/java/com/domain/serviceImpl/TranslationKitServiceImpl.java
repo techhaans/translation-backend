@@ -1,7 +1,6 @@
 package com.domain.serviceImpl;
 
 import com.domain.service.TranslationKitService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service
-//@RequiredArgsConstructor
 public class TranslationKitServiceImpl implements TranslationKitService {
 
     private final ResourceLoader resourceLoader;

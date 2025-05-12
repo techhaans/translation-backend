@@ -1,131 +1,179 @@
 import os
 import re
 import json
-import sys
 import requests
+import subprocess
 
-# ==== Config ====
-if len(sys.argv) < 2:
-    print("Please provide the path to the cloned repo. Example:")
-    print("python extract_i18n_template.py temp/<uuid>")
-    sys.exit(1)
+def safe_print(msg):
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        print(msg.encode("utf-8", errors="ignore").decode("utf-8"))
 
-html_folder = sys.argv[1]
-script_dir = os.path.dirname(os.path.abspath(__file__))
-translation_dir = os.path.join(script_dir, "i18n")
-os.makedirs(translation_dir, exist_ok=True)
+def extract_text_from_html(file_path, prefix):
+    translations = {}
+    label_counter = 1
+    placeholder_counter = 1
 
-translation_file = os.path.join(translation_dir, "_en.js")
-customer_id = "CUSTOMER_ID_PLACEHOLDER"
-default_language = "en"
-translation_endpoint = "http://localhost:8082/labels"
-
-headers = {
-    "customerUId": "afc3c097-9054-49bc-938c-bfbcbd9ea3c7",
-    "accept": "application/json",
-    "Content-Type": "application/json"
-}
-
-# ==== Step 1: Load existing translations ====
-existing_translations = {}
-if os.path.exists(translation_file):
-    with open(translation_file, "r", encoding="utf-8") as f:
-        content = f.read()
-        matches = re.findall(r'"([^"]+)":\s*"([^"]+)"', content)
-        for k, v in matches:
-            existing_translations[k] = v
-
-# ==== Step 2: Process all HTML files ====
-all_translations = existing_translations.copy()
-html_files = [f for f in os.listdir(html_folder) if f.endswith(".html")]
-counter = len(existing_translations) + 1
-
-for html_file in html_files:
-    full_path = os.path.join(html_folder, html_file)
-    filename_prefix = os.path.splitext(os.path.basename(html_file))[0]
-
-    print(f" Processing {html_file}...")
-
-    with open(full_path, "r", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         html = f.read()
 
-    translations = {}
-    found_any = False
+    safe_print(f"[extract_text_from_html] File: {file_path}")
 
-    # Match visible labels
     label_matches = re.findall(r'<(label|button|span|p|h[1-6])[^>]*?>(.*?)</\1>', html, re.DOTALL)
     for tag, text in label_matches:
         text = text.strip()
         if not text:
             continue
-        key = f"label_{counter}"
+        key = f"{prefix}.label_{label_counter}"
         translations[key] = text
-        replacement = f'<{tag} data-i18n="{key}"></{tag}>'
-        html = re.sub(rf'<{tag}[^>]*?>\s*{re.escape(text)}\s*</{tag}>', replacement, html, count=1)
-        counter += 1
-        found_any = True
+        label_counter += 1
 
-    # Match placeholders
     placeholder_matches = re.findall(r'<(input|textarea)[^>]*?placeholder="([^"]+)"', html)
     for tag, placeholder in placeholder_matches:
-        key = f"placeholder_{counter}"
+        key = f"{prefix}.placeholder_{placeholder_counter}"
         translations[key] = placeholder
-        html = html.replace(f'placeholder="{placeholder}"', f'data-i18n-placeholder="{key}"')
-        counter += 1
-        found_any = True
+        placeholder_counter += 1
 
-    # Inject translation.js if not already included
-    if 'translation.js' not in html:
-        script_tag = '<script src="translations/translation.js"></script>'
-        if '</body>' in html:
-            html = html.replace('</body>', script_tag + '\n</body>')
-        else:
-            html += '\n' + script_tag
+    safe_print(f"[extract_text_from_html] Found labels: {json.dumps(translations, indent=2)}")
+    return translations
 
-    # Save modified HTML
-    with open(full_path, "w", encoding="utf-8") as f:
+def fetch_customer_languages(customer_uid):
+    try:
+        url = f"http://localhost:8082/customer/languages/{customer_uid}"
+        resp = requests.get(url)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        safe_print("Failed to fetch customer languages: " + str(e))
+        return []
+
+def inject_dropdown(html_content, languages):
+    options_html = ""
+    for lang in languages:
+        code = lang.get("languageCode")
+        name = lang.get("languageName")
+        selected = " selected" if lang.get("default", False) else ""
+        options_html += f'    <option value="{code}"{selected}>{name}</option>\n'
+
+    dropdown_html = f'''
+<select id="language">
+{options_html}</select>
+'''
+    if "<body" in html_content:
+        return re.sub(r'(<body[^>]*?>)', r'\1\n' + dropdown_html, html_content, count=1, flags=re.IGNORECASE)
+    else:
+        return dropdown_html + html_content
+
+def update_html_file_with_i18n(file_path, prefix, translations, inject_dropdown_flag=False, languages=None):
+    with open(file_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    label_counter = 1
+    placeholder_counter = 1
+
+    def replace_label(match):
+        nonlocal label_counter
+        tag, content = match.group(1), match.group(2).strip()
+        key = f"{prefix}.label_{label_counter}"
+        label_counter += 1
+        return f'<{tag} data-i18n="{key}"></{tag}>'
+
+    def replace_placeholder(match):
+        nonlocal placeholder_counter
+        key = f"{prefix}.placeholder_{placeholder_counter}"
+        placeholder_counter += 1
+        return re.sub(r'placeholder="[^"]+"', f'data-i18n="{key}"', match.group(0))
+
+    html = re.sub(r'<(label|button|span|p|h[1-6])[^>]*?>(.*?)</\1>', replace_label, html, flags=re.DOTALL)
+    html = re.sub(r'<(input|textarea)[^>]*?placeholder="([^"]+)"', replace_placeholder, html)
+
+    if 'i18n/translation.js' not in html:
+        html = re.sub(r'(</body\s*>)', r'<script src="i18n/translation.js"></script>\n\1', html, flags=re.IGNORECASE)
+
+    if inject_dropdown_flag and languages:
+        html = inject_dropdown(html, languages)
+
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(html)
 
-    # Add translations with file prefix
-    for k, v in translations.items():
-        all_translations[f"{filename_prefix}.{k}"] = v
+def write_js_files(i18n_folder_path, labels_by_lang):
+    os.makedirs(i18n_folder_path, exist_ok=True)
+    for lang_code, labels in labels_by_lang.items():
+        js_file = os.path.join(i18n_folder_path, f"_{lang_code}.js")
+        with open(js_file, "w", encoding="utf-8") as f:
+            f.write(f"var translations_{lang_code} = {{\n")
+            for key, value in labels.items():
+                f.write(f'    "{key}": "{value}",\n')
+            f.write("};\n")
 
-    if not found_any:
-        print(f" No translatable content found in {html_file}.")
+def run_translation_workflow(repo_path, customer_uid, package_folder):
+    package_path = os.path.join(repo_path, package_folder)
+    html_files = [f for f in os.listdir(package_path) if f.endswith(".html")]
 
-# ==== Step 3: Send POST request ====
-payload = all_translations
+    extracted_labels = {}
+    customer_languages = fetch_customer_languages(customer_uid)
 
-try:
-    print("Sending Payload:")
-    print(json.dumps(payload, indent=2))
-    res = requests.post(translation_endpoint, json=payload, headers=headers)
-    res.raise_for_status()
-    response_data = res.json()
-    print("Received response from API")
-    print(json.dumps(response_data, indent=2))
-except Exception as e:
-    print("Failed to reach API. Error:", e)
-    response_data = {
-        "defaultLanguageCode": default_language,
-        "languages": [
-            {
-                "languageCode": default_language,
-                "translations": payload
-            }
-        ]
+    safe_print(f"Customer Languages: {json.dumps(customer_languages, indent=2)}")
+
+    for html_file in html_files:
+        prefix = os.path.splitext(html_file)[0]
+        file_path = os.path.join(package_path, html_file)
+        safe_print(f"Scanning HTML file: {html_file}")
+
+        labels = extract_text_from_html(file_path, prefix)
+        safe_print(f"Extracted labels from {html_file}: {json.dumps(labels, indent=2)}")
+
+        extracted_labels.update(labels)
+
+        is_header = html_file.lower() == "header.html"
+        update_html_file_with_i18n(
+            file_path, prefix, labels,
+            inject_dropdown_flag=is_header,
+            languages=customer_languages
+        )
+        safe_print(f"Processed: {html_file}")
+
+    if not extracted_labels:
+        safe_print("No labels found.")
+        return
+
+    safe_print("Sending extracted label payload to backend:")
+    safe_print(json.dumps(extracted_labels, indent=2))
+
+    headers = {
+        "customerUId": customer_uid,
+        "Content-Type": "application/json"
     }
 
-# ==== Step 4: Generate JS files for each language ====
-langs = response_data.get("languages", [])
-for lang in langs:
-    lang_code = lang.get("languageCode")
-    lang_translations = lang.get("translations", {})
-    file_path = os.path.join(translation_dir, f"_{lang_code}.js")
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(f"var translations_{lang_code} = {{\n")
-        for full_key, value in lang_translations.items():
-            simple_key = full_key.split('.')[-1]
-            f.write(f'    "{simple_key}": "{value}",\n')
-        f.write("};\n")
-    print(f" Generated {file_path}")
+    try:
+        response = requests.post("http://localhost:8082/labels", json=extracted_labels, headers=headers)
+        response.raise_for_status()
+        safe_print("Label payload posted.")
+    except Exception as e:
+        safe_print("Error posting labels: " + str(e))
+        return
+
+    try:
+        resp_json = response.json()
+        labels_by_lang = {l["languageCode"]: l["translations"] for l in resp_json["languages"]}
+        i18n_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "i18n")
+        write_js_files(i18n_folder, labels_by_lang)
+        safe_print("i18n JS files generated.")
+    except Exception as e:
+        safe_print("JS generation failed: " + str(e))
+
+    try:
+        subprocess.run(["git", "-C", repo_path, "add", "."], check=True)
+        subprocess.run(["git", "-C", repo_path, "commit", "-m", "Update i18n translations and HTML with dropdown"], check=True)
+        subprocess.run(["git", "-C", repo_path, "push"], check=True)
+        safe_print("Git commit and push complete.")
+    except subprocess.CalledProcessError as e:
+        safe_print("Git error: " + str(e))
+
+if __name__ == "__main__":
+    run_translation_workflow(
+        repo_path=r"D:\new-test4",
+        customer_uid="d16c1cd5-7082-4d6a-8ddf-d28217c1258b",
+        package_folder="package"
+    )

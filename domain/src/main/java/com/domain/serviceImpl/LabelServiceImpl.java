@@ -6,6 +6,7 @@ import com.domain.util.ChatGptTranslator;
 import com.domain.model.*;
 import com.domain.service.LabelService;
 import com.domain.repo.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class LabelServiceImpl implements LabelService {
+
+    public static final String ADMIN_ROLE = "proof_reader";
+
 
     @Autowired
     private LabelRepository labelRepository;
@@ -63,9 +67,10 @@ public class LabelServiceImpl implements LabelService {
         Map<String, Label> labelMap = labelRepository.findByCustomer_Cuid(customerCuid).stream()
                 .collect(Collectors.toMap(Label::getLabelKey, Function.identity()));
 
-        ProofReaders approvedBy = proofReadersRepository.findByRole("ADMIN")
+        ProofReaders approvedBy = proofReadersRepository.findByRole(ADMIN_ROLE)
                 .orElseThrow(() -> new RuntimeException("No approver found"));
 
+        // Save or update labels and default language translations
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             String labelKey = entry.getKey();
             String value = entry.getValue();
@@ -74,68 +79,112 @@ public class LabelServiceImpl implements LabelService {
                 Label newLabel = new Label();
                 newLabel.setLabelKey(labelKey);
                 newLabel.setLabelName(extractLabelNameFromKey(labelKey));
-                newLabel.setCustomer(customer);
+               // newLabel.setCustomer(customer);
+                newLabel.setCustomerByCuid(customer);
                 newLabel.setCreatedDate(LocalDateTime.now());
                 newLabel.setUpdatedDate(LocalDateTime.now());
                 return labelRepository.save(newLabel);
             });
 
-            LabelTranslation defaultTranslation = new LabelTranslation();
-            defaultTranslation.setLabel(labelKey);
-            defaultTranslation.setLanguageCode(defaultLanguageCode);
-            defaultTranslation.setLabelTranslated(value);
-            defaultTranslation.setStatus("ACTIVE");
-            defaultTranslation.setApprovedBy(approvedBy);
-            defaultTranslation.setCreatedDate(LocalDateTime.now());
-            defaultTranslation.setUpdatedDate(LocalDateTime.now());
-            defaultTranslation.setTranslations("{}");
+            boolean defaultExists = labelTranslationRepository
+                    .existsByLabel_LabelKeyAndLanguageCode(labelKey, defaultLanguageCode);
 
-            labelTranslationRepository.save(defaultTranslation);
+            if (!defaultExists) {
+                LabelTranslation defaultTranslation = new LabelTranslation();
+                defaultTranslation.setLabel(label);
+                defaultTranslation.setLanguageCode(defaultLanguageCode);
+                defaultTranslation.setLabelTranslated(value);
+                defaultTranslation.setStatus("ACTIVE");
+                defaultTranslation.setApprovedBy(approvedBy);
+                defaultTranslation.setCreatedDate(LocalDateTime.now());
+                defaultTranslation.setUpdatedDate(LocalDateTime.now());
+                defaultTranslation.setTranslations("{}");
+                labelTranslationRepository.save(defaultTranslation);
+            }
         }
 
+        // Prepare response list
         List<LabelTranslationResponseDTO> responseLanguages = new ArrayList<>();
 
+        // Add default language response
+        LabelTranslationResponseDTO defaultRes = new LabelTranslationResponseDTO();
+        defaultRes.setLanguageCode(defaultLanguageCode);
+        defaultRes.setTranslations(labels);
+        responseLanguages.add(defaultRes);
+
+        // Fetch all existing translations for this customer and build a lookup map
+        List<LabelTranslation> existingTranslations = labelTranslationRepository.findByLabel_Customer_Cuid(customerCuid);
+        Map<String, Map<String, LabelTranslation>> translationMap = new HashMap<>();
+        for (LabelTranslation lt : existingTranslations) {
+            translationMap
+                    .computeIfAbsent(lt.getLabel().getLabelKey(), k -> new HashMap<>())
+                    .put(lt.getLanguageCode(), lt);
+        }
+
+
+        // Handle other languages
         for (CustomerLang lang : customerLangs) {
             String langCode = lang.getLanguage().getLanguageKey();
             if (langCode.equals(defaultLanguageCode)) continue;
 
             Map<String, String> translationsToTranslate = new LinkedHashMap<>();
-            for (Map.Entry<String, String> entry : labels.entrySet()) {
-                translationsToTranslate.put(entry.getKey(), entry.getValue());
-            }
-
-            Map<String, String> translatedResults = chatGptTranslator.translateBatch(translationsToTranslate, defaultLanguageCode, langCode);
             Map<String, String> translatedMap = new LinkedHashMap<>();
 
-            for (Map.Entry<String, String> entry : translatedResults.entrySet()) {
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
                 String labelKey = entry.getKey();
-                String translatedValue = entry.getValue();
 
-                LabelTranslation translation = new LabelTranslation();
-                translation.setLabel(labelKey);
-                translation.setLanguageCode(langCode);
-                translation.setLabelTranslated(translatedValue);
-                translation.setStatus("ACTIVE");
-                translation.setApprovedBy(approvedBy);
-                translation.setCreatedDate(LocalDateTime.now());
-                translation.setUpdatedDate(LocalDateTime.now());
-                translation.setTranslations("{}");
-
-                labelTranslationRepository.save(translation);
-                translatedMap.put(labelKey, translatedValue);
+                if (translationMap.containsKey(labelKey) && translationMap.get(labelKey).containsKey(langCode)) {
+                    // ✅ Use existing translation
+                    translatedMap.put(labelKey, translationMap.get(labelKey).get(langCode).getLabelTranslated());
+                } else {
+                    // ❌ Not yet translated — needs ChatGPT
+                    translationsToTranslate.put(labelKey, entry.getValue());
+                }
             }
 
-            LabelTranslationResponseDTO res = new LabelTranslationResponseDTO();
-            res.setLanguageCode(langCode);
-            res.setTranslations(translatedMap);
-            responseLanguages.add(res);
+            if (!translationsToTranslate.isEmpty()) {
+                Map<String, String> translatedResults = chatGptTranslator.translateBatch(
+                        translationsToTranslate, defaultLanguageCode, langCode
+                );
+
+                for (Map.Entry<String, String> entry : translatedResults.entrySet()) {
+                    String labelKey = entry.getKey();
+                    String translatedValue = entry.getValue();
+
+                    Label label = labelMap.get(labelKey);
+                    if (label == null) continue;
+
+                    LabelTranslation translation = new LabelTranslation();
+                    translation.setLabel(label);
+                    translation.setLanguageCode(langCode);
+                    translation.setLabelTranslated(translatedValue);
+                    translation.setStatus("ACTIVE");
+                    translation.setApprovedBy(approvedBy);
+                    translation.setCreatedDate(LocalDateTime.now());
+                    translation.setUpdatedDate(LocalDateTime.now());
+
+                    try {
+                        Map<String, String> json = Map.of("translatedText", translatedValue);
+                        translation.setTranslations(new ObjectMapper().writeValueAsString(json));
+                    } catch (Exception e) {
+                        translation.setTranslations("{}");
+                        e.printStackTrace();
+                    }
+
+                    labelTranslationRepository.save(translation);
+                    translatedMap.put(labelKey, translatedValue);
+                }
+            }
+
+            if (!translatedMap.isEmpty()) {
+                LabelTranslationResponseDTO res = new LabelTranslationResponseDTO();
+                res.setLanguageCode(langCode);
+                res.setTranslations(translatedMap);
+                responseLanguages.add(res);
+            }
         }
 
-        LabelTranslationResponseDTO defaultRes = new LabelTranslationResponseDTO();
-        defaultRes.setLanguageCode(defaultLanguageCode);
-        defaultRes.setTranslations(labels);
-        responseLanguages.add(0, defaultRes);
-
+        // Build final response
         LabelResponseDTO response = new LabelResponseDTO();
         response.setCuid(customerCuid);
         response.setDefaultLanguageCode(defaultLanguageCode);
@@ -144,4 +193,8 @@ public class LabelServiceImpl implements LabelService {
         return response;
     }
 
+    @Override
+    public List<Label> getLabelsByCustomerCuid(UUID id) {
+        return labelRepository.findByCustomer_Cuid(id);
+    }
 }

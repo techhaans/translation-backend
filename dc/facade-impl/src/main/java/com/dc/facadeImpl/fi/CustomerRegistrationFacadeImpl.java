@@ -2,6 +2,7 @@ package com.dc.facadeImpl.fi;
 
 import com.dc.facade.fd.CustomerRegistrationFacade;
 import com.domain.dto.CustomerRegistrationRequest;
+import com.domain.dto.CustomerRegistrationResponse;
 import com.domain.service.CustomerRegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,8 @@ public class CustomerRegistrationFacadeImpl implements CustomerRegistrationFacad
     private CustomerRegistrationService customerRegistrationService;
 
     @Override
-    public void registerCustomer(CustomerRegistrationRequest request) {
-        customerRegistrationService.registerCustomer(request);
+    public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
+       return customerRegistrationService.registerCustomer(request);
     }
     @Override
     public List<?> getAllCustomer() {

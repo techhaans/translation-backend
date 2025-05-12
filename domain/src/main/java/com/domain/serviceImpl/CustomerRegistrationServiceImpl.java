@@ -1,6 +1,7 @@
 package com.domain.serviceImpl;
 
 import com.domain.dto.CustomerRegistrationRequest;
+import com.domain.dto.CustomerRegistrationResponse;
 import com.domain.model.Customer;
 import com.domain.model.UserTable;
 import com.domain.repo.CustomerRepository;
@@ -22,15 +23,17 @@ public class CustomerRegistrationServiceImpl implements CustomerRegistrationServ
     private CustomerRepository customerRepository;
     @Autowired
     private UserRepository userRepository;
+
     @Override
-    public void registerCustomer(CustomerRegistrationRequest request) {
+    public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
+        // Create user
         UserTable user = new UserTable();
         user.setName(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("CUSTOMER");
         userRepository.save(user);
-        // Save customer info
 
+        // Create and save customer info
         Customer customer = new Customer();
         customer.setCname(request.getName());
         customer.setCountry(request.getCountry());
@@ -42,12 +45,17 @@ public class CustomerRegistrationServiceImpl implements CustomerRegistrationServ
 
         customerRepository.save(customer);
 
+        // Return the CustomerRegistrationResponse
+        return new CustomerRegistrationResponse(
+                customer.getCuid(),
+                user.getId(),
+                user.getName(),
+                user.getRole()
+        );
     }
 
     @Override
     public List<Customer> getAllCustomer() {
         return customerRepository.findAll();
     }
-
-
 }

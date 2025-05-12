@@ -1,12 +1,7 @@
 package com.domain.model;
 
-import com.domain.dto.LabelTranslationResponseDTO;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDateTime;
-import java.util.List;
-
 @Entity
 @Table(name = "label_translation")
 public class LabelTranslation {
@@ -15,9 +10,9 @@ public class LabelTranslation {
     @Column(name = "label_translation_id")
     private Integer labelTranslationId;
 
-    @Column(name = "label_name")
-    private String label;
-
+    @ManyToOne
+    @JoinColumn(name = "label_key", referencedColumnName = "label_key", nullable = false)
+    private Label label;
     @Column(name = "language_code", nullable = false)
     private String languageCode;  
 
@@ -46,7 +41,7 @@ public class LabelTranslation {
     public LabelTranslation() {
     }
 
-    public LabelTranslation(Integer labelTranslationId, String label, String languageCode,
+    public LabelTranslation(Integer labelTranslationId, Label label, String languageCode,
                             String translations,
                             String labelTranslated, String status, ProofReaders approvedBy,
                             LocalDateTime createdDate, LocalDateTime updatedDate) {
@@ -61,20 +56,20 @@ public class LabelTranslation {
         this.updatedDate = updatedDate;
     }
 
+    public Label getLabel() {
+        return label;
+    }
+
+    public void setLabel(Label label) {
+        this.label = label;
+    }
+
     public Integer getLabelTranslationId() {
         return labelTranslationId;
     }
 
     public void setLabelTranslationId(Integer labelTranslationId) {
         this.labelTranslationId = labelTranslationId;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
     }
 
     public String getLanguageCode() {
@@ -137,7 +132,7 @@ public class LabelTranslation {
     public String toString() {
         return "LabelTranslation{" +
                 "labelTranslationId=" + labelTranslationId +
-                ", labelName='" + label + '\'' +
+                ", labelKey='" + label + '\'' +
                 ", translations='" + translations + '\'' +
                 ", languageCode='" + languageCode + '\'' +
                 ", labelTranslated='" + labelTranslated + '\'' +

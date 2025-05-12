@@ -1,4 +1,4 @@
 package com.domain.service;
 
-//public interface UserDetailsService {
-//}
+public interface UserDetailsService {
+}
