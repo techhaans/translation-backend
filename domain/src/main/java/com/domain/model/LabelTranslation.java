@@ -1,9 +1,7 @@
 package com.domain.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "label_translation")
 public class LabelTranslation {
@@ -12,8 +10,15 @@ public class LabelTranslation {
     @Column(name = "label_translation_id")
     private Integer labelTranslationId;
 
-    @Column(name = "language", nullable = false)
-    private String language;
+    @ManyToOne
+    @JoinColumn(name = "label_key", referencedColumnName = "label_key", nullable = false)
+    private Label label;
+    @Column(name = "language_code", nullable = false)
+    private String languageCode;  
+
+    @Column(name = "translations", nullable = false)
+    private String translations;
+
 
     @Column(name = "label_translated", nullable = false, columnDefinition = "TEXT")
     private String labelTranslated;
@@ -31,16 +36,32 @@ public class LabelTranslation {
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
 
+    // Constructors, getters and setters...
+
     public LabelTranslation() {
     }
-    public LabelTranslation(Integer labelTranslationId, String language, String labelTranslated, String status, ProofReaders approvedBy, LocalDateTime createdDate, LocalDateTime updatedDate) {
+
+    public LabelTranslation(Integer labelTranslationId, Label label, String languageCode,
+                            String translations,
+                            String labelTranslated, String status, ProofReaders approvedBy,
+                            LocalDateTime createdDate, LocalDateTime updatedDate) {
         this.labelTranslationId = labelTranslationId;
-        this.language = language;
+        this.label = label;
+        this.translations = translations;
+        this.languageCode = languageCode;
         this.labelTranslated = labelTranslated;
         this.status = status;
         this.approvedBy = approvedBy;
         this.createdDate = createdDate;
         this.updatedDate = updatedDate;
+    }
+
+    public Label getLabel() {
+        return label;
+    }
+
+    public void setLabel(Label label) {
+        this.label = label;
     }
 
     public Integer getLabelTranslationId() {
@@ -51,12 +72,12 @@ public class LabelTranslation {
         this.labelTranslationId = labelTranslationId;
     }
 
-    public String getLanguage() {
-        return language;
+    public String getLanguageCode() {
+        return languageCode;
     }
 
-    public void setLanguage(String language) {
-        this.language = language;
+    public void setLanguageCode(String languageCode) {
+        this.languageCode = languageCode;
     }
 
     public String getLabelTranslated() {
@@ -99,11 +120,21 @@ public class LabelTranslation {
         this.updatedDate = updatedDate;
     }
 
+    public String getTranslations() {
+        return translations;
+    }
+
+    public void setTranslations(String translations) {
+        this.translations = translations;
+    }
+
     @Override
     public String toString() {
         return "LabelTranslation{" +
                 "labelTranslationId=" + labelTranslationId +
-                ", language='" + language + '\'' +
+                ", labelKey='" + label + '\'' +
+                ", translations='" + translations + '\'' +
+                ", languageCode='" + languageCode + '\'' +
                 ", labelTranslated='" + labelTranslated + '\'' +
                 ", status='" + status + '\'' +
                 ", approvedBy=" + approvedBy +

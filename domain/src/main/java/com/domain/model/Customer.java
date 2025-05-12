@@ -3,6 +3,7 @@ package com.domain.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "customer")
@@ -12,8 +13,23 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int cid;
 
+    @Column(name = "cuid", unique = true, nullable = false, updatable = false)
+    private UUID cuid;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.cuid == null) {
+            this.cuid = UUID.randomUUID();
+        }
+    }
+
     @Column(name = "cname", nullable = false)
     private String cname;
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "membership_type")
+    private String membershipType;
 
     @Column(name = "status")
     private String status;
@@ -48,12 +64,36 @@ public class Customer {
         this.cid = cid;
     }
 
+    public UUID getCuid() {
+        return cuid;
+    }
+
+    public void setCuid(UUID cuid) {
+        this.cuid = cuid;
+    }
+
     public String getCname() {
         return cname;
     }
 
     public void setCname(String cname) {
         this.cname = cname;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getMembershipType() {
+        return membershipType;
+    }
+
+    public void setMembershipType(String membershipType) {
+        this.membershipType = membershipType;
     }
 
     public String getStatus() {
@@ -93,6 +133,8 @@ public class Customer {
         return "Customer{" +
                 "cid=" + cid +
                 ", cname='" + cname + '\'' +
+                ", country='" + country + '\'' +
+                ", membershipType='" + membershipType + '\'' +
                 ", status='" + status + '\'' +
                 ", user=" + user +
                 ", createdDate=" + createdDate +
