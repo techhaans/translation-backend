@@ -1,33 +1,27 @@
 package com.domain.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
+import java.util.Map;
 
+@Getter
+@Setter
 public class LabelRequestDTO {
-    private Integer customerId;
-    private String defaultLanguageCode;
-    private List<LabelTranslationRequestDTO> languages;
 
-    public Integer getCustomerId() {
-        return customerId;
+    @NotEmpty(message = "Label data must not be empty")
+    private Map<String, String> labelKeyValuePairs;
+
+    public Map<String, String> getLabelKeyValuePairs() {
+        return labelKeyValuePairs;
     }
 
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
-    }
-
-    public String getDefaultLanguageCode() {
-        return defaultLanguageCode;
-    }
-
-    public void setDefaultLanguageCode(String defaultLanguageCode) {
-        this.defaultLanguageCode = defaultLanguageCode;
-    }
-
-    public List<LabelTranslationRequestDTO> getLanguages() {
-        return languages;
-    }
-
-    public void setLanguages(List<LabelTranslationRequestDTO> languages) {
-        this.languages = languages;
+    public void setLabelKeyValuePairs(Map<String, String> labelKeyValuePairs) {
+        this.labelKeyValuePairs = labelKeyValuePairs;
     }
 }

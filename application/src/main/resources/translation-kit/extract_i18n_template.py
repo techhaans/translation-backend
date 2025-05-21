@@ -10,6 +10,16 @@ def safe_print(msg):
     except UnicodeEncodeError:
         print(msg.encode("utf-8", errors="ignore").decode("utf-8"))
 
+def load_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, "config.json")
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        safe_print(f"[load_config] Failed to read config.json: {e}")
+        exit(1)
+
 def extract_text_from_html(file_path, prefix):
     translations = {}
     label_counter = 1
@@ -38,9 +48,9 @@ def extract_text_from_html(file_path, prefix):
     safe_print(f"[extract_text_from_html] Found labels: {json.dumps(translations, indent=2)}")
     return translations
 
-def fetch_customer_languages(customer_uid):
+def fetch_customer_languages(customer_uid, backend_url, endpoint):
     try:
-        url = f"http://localhost:8082/customer/languages/{customer_uid}"
+        url = f"{backend_url}{endpoint}/{customer_uid}"
         resp = requests.get(url)
         resp.raise_for_status()
         return resp.json()
@@ -65,7 +75,7 @@ def inject_dropdown(html_content, languages):
     else:
         return dropdown_html + html_content
 
-def update_html_file_with_i18n(file_path, prefix, translations, inject_dropdown_flag=False, languages=None):
+def update_html_file_with_i18n(file_path, prefix, translations, inject_dropdown_flag=False, languages=None, translation_script="i18n/translation.js"):
     with open(file_path, "r", encoding="utf-8") as f:
         html = f.read()
 
@@ -88,8 +98,8 @@ def update_html_file_with_i18n(file_path, prefix, translations, inject_dropdown_
     html = re.sub(r'<(label|button|span|p|h[1-6])[^>]*?>(.*?)</\1>', replace_label, html, flags=re.DOTALL)
     html = re.sub(r'<(input|textarea)[^>]*?placeholder="([^"]+)"', replace_placeholder, html)
 
-    if 'i18n/translation.js' not in html:
-        html = re.sub(r'(</body\s*>)', r'<script src="i18n/translation.js"></script>\n\1', html, flags=re.IGNORECASE)
+    if translation_script not in html:
+        html = re.sub(r'(</body\s*>)', f'<script src="{translation_script}"></script>\n\\1', html, flags=re.IGNORECASE)
 
     if inject_dropdown_flag and languages:
         html = inject_dropdown(html, languages)
@@ -107,12 +117,24 @@ def write_js_files(i18n_folder_path, labels_by_lang):
                 f.write(f'    "{key}": "{value}",\n')
             f.write("};\n")
 
-def run_translation_workflow(repo_path, customer_uid, package_folder):
+def run_translation_workflow(config):
+    repo_path = config["repoPath"]
+    customer_uid = config["customerUId"]
+    package_folder = config["packageFolder"]
+    header_file_name = config["headerFileName"]
+    backend_url = config["backendUrl"]
+    label_post_endpoint = config["labelPostEndpoint"]
+    language_fetch_endpoint = config["languageFetchEndpoint"]
+    translation_script = config["translationScriptPath"]
+    i18n_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), config["i18nFolderName"])
+    commit_message = config.get("commitMessage", "Update i18n translations")
+
     package_path = os.path.join(repo_path, package_folder)
     html_files = [f for f in os.listdir(package_path) if f.endswith(".html")]
 
     extracted_labels = {}
-    customer_languages = fetch_customer_languages(customer_uid)
+    customer_lang_response = fetch_customer_languages(customer_uid, backend_url, language_fetch_endpoint)
+    customer_languages = customer_lang_response.get("data", [])  # Extract only the list
 
     safe_print(f"Customer Languages: {json.dumps(customer_languages, indent=2)}")
 
@@ -122,15 +144,14 @@ def run_translation_workflow(repo_path, customer_uid, package_folder):
         safe_print(f"Scanning HTML file: {html_file}")
 
         labels = extract_text_from_html(file_path, prefix)
-        safe_print(f"Extracted labels from {html_file}: {json.dumps(labels, indent=2)}")
-
         extracted_labels.update(labels)
 
-        is_header = html_file.lower() == "header.html"
+        is_header = html_file.lower() == header_file_name.lower()
         update_html_file_with_i18n(
             file_path, prefix, labels,
             inject_dropdown_flag=is_header,
-            languages=customer_languages
+            languages=customer_languages,
+            translation_script=translation_script
         )
         safe_print(f"Processed: {html_file}")
 
@@ -147,7 +168,7 @@ def run_translation_workflow(repo_path, customer_uid, package_folder):
     }
 
     try:
-        response = requests.post("http://localhost:8082/labels", json=extracted_labels, headers=headers)
+        response = requests.post(f"{backend_url}{label_post_endpoint}", json=extracted_labels, headers=headers)
         response.raise_for_status()
         safe_print("Label payload posted.")
     except Exception as e:
@@ -157,7 +178,6 @@ def run_translation_workflow(repo_path, customer_uid, package_folder):
     try:
         resp_json = response.json()
         labels_by_lang = {l["languageCode"]: l["translations"] for l in resp_json["languages"]}
-        i18n_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "i18n")
         write_js_files(i18n_folder, labels_by_lang)
         safe_print("i18n JS files generated.")
     except Exception as e:
@@ -165,15 +185,12 @@ def run_translation_workflow(repo_path, customer_uid, package_folder):
 
     try:
         subprocess.run(["git", "-C", repo_path, "add", "."], check=True)
-        subprocess.run(["git", "-C", repo_path, "commit", "-m", "Update i18n translations and HTML with dropdown"], check=True)
+        subprocess.run(["git", "-C", repo_path, "commit", "-m", commit_message], check=True)
         subprocess.run(["git", "-C", repo_path, "push"], check=True)
         safe_print("Git commit and push complete.")
     except subprocess.CalledProcessError as e:
         safe_print("Git error: " + str(e))
 
 if __name__ == "__main__":
-    run_translation_workflow(
-        repo_path=r"D:\new-test4",
-        customer_uid="d16c1cd5-7082-4d6a-8ddf-d28217c1258b",
-        package_folder="package"
-    )
+    config = load_config()
+    run_translation_workflow(config)

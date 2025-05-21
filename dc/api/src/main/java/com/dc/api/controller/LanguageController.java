@@ -1,41 +1,50 @@
 package com.dc.api.controller;
 
 import com.dc.facade.fd.LanguageFacade;
+import com.domain.dto.response.ApiResponse;
+import com.domain.dto.response.ApiResponseBuilder;
+import com.domain.dto.response.LanguageResponseDTO;
 import com.domain.model.Language;
 import com.domain.service.LanguageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/language")
+@RequestMapping("/api/languages")
 @CrossOrigin(origins = "http://localhost:3000")
+@Tag(
+        name = "Language Management",
+        description = "APIs for retrieving supported languages and languages by customer ID."
+)
+@RequiredArgsConstructor
 public class LanguageController {
 
-    @Autowired
-    private LanguageFacade languageFacade;
-    @Autowired
-    private LanguageService languageService;
+    private final LanguageFacade languageFacade;
+    private final LanguageService languageService;
 
-    @GetMapping("/api/languages")
-    public List<Language> getLanguages() {
-        return languageFacade.getAllLanguages();
+    @Operation(summary = "Get All Languages")
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<LanguageResponseDTO>>> getAllLanguages() {
+        List<Language> languages = languageFacade.getAllLanguages();
+        List<LanguageResponseDTO> dtoList = languages.stream()
+                .map(LanguageResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponseBuilder.success(dtoList, "Languages fetched successfully"));
     }
-    @GetMapping("/{id}")
-    public List<Language> getAllLanguages(@PathVariable Integer id)
-    {
-        return languageService.getLanguageByid(id);
 
-    }
-    @PutMapping("/update/{languageKey}")
-    public ResponseEntity<Language> updateLanguage(@PathVariable String languageKey, @RequestBody Map<String ,String> requestBody)
-    {
-        String newName = requestBody.get("lname");
-        Language updatedLanguage = languageService.updateLanguageName(languageKey, newName);
-        return ResponseEntity.ok(updatedLanguage);
+    @Operation(summary = "Get Languages By Customer ID")
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<ApiResponse<List<LanguageResponseDTO>>> getLanguagesByCustomerId(@PathVariable Integer customerId) {
+        List<Language> languages = languageFacade.getLanguagesByCustomerId(customerId);
+        List<LanguageResponseDTO> dtoList = languages.stream()
+                .map(LanguageResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponseBuilder.success(dtoList, "Languages fetched for customer successfully"));
     }
 }
-

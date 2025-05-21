@@ -17,4 +17,9 @@ public class LanguageFacadeImpl implements LanguageFacade {
     public List<Language> getAllLanguages() {
         return LanguageService.getAllLanguages();
     }
+
+    @Override
+    public List<Language> getLanguagesByCustomerId(Integer customerId) {
+        return LanguageService.getLanguageByid(customerId);
+    }
 }

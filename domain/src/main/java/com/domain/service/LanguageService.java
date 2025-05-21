@@ -8,6 +8,4 @@ public interface LanguageService {
     List<Language> getAllLanguages();
 
     List<Language> getLanguageByid(Integer id);
-
-    Language updateLanguageName(String languageKey, String newName);
 }

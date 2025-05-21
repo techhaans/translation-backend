@@ -2,6 +2,7 @@ package com.domain.serviceImpl;
 
 import com.domain.dto.GitHubRepoRequest;
 import com.domain.service.GitHubIntegrationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -13,14 +14,26 @@ import java.util.UUID;
 @Service
 public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
 
+    // === NEW: Inject config values from application.properties ===
+    @Value("${git.temp.dir:temp}")
+    private String tempDir;
+
+    @Value("${python.interpreter:python3}")
+    private String pythonInterpreter;
+
+    @Value("${translation.script.path}")
+    private String translationScriptPath;
+    @Value("${customer.cuid}")
+    private String customerCuid;
+
     @Override
     public void processGitHubRepo(GitHubRepoRequest request) {
-        // Securely form the authenticated repo URL
+        // === NEW: Construct authenticated repo URL securely (same as before) ===
         String authenticatedUrl = request.getRepoUrl()
                 .replace("https://", "https://" + request.getGitUsername() + ":" + request.getPersonalAccessToken() + "@");
 
-        // Use a unique temp directory for each operation
-        String localPath = "temp/" + UUID.randomUUID();
+        // === NEW: Use injected tempDir + unique UUID ===
+        String localPath = tempDir + "/" + UUID.randomUUID();
         File repoDir = new File(localPath);
 
         try {
@@ -30,12 +43,18 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
             System.out.println("🔧 Updating remote origin URL to include PAT...");
             executeCommand(new String[]{"git", "remote", "set-url", "origin", authenticatedUrl}, repoDir);
 
-            // Step 2: Run the Python translation script
-            String scriptPath = Paths.get("application", "src", "main", "resources", "translation-kit", "extract_i18n_template.py").toString();
+            // === UPDATED: Use translationScriptPath from config ===
             System.out.println("🚀 Running Python translation script...");
-            executeCommand(new String[]{"python3", scriptPath, localPath, "afc3c097-9054-49bc-938c-bfbcbd9ea3c7", request.getPackageName(),request.getPageName(), request.getDropdownId()}, null);
+            executeCommand(new String[]{
+                    resolvePythonInterpreter(),
+                    translationScriptPath,
+                    localPath,
+                    customerCuid,
+                    request.getPackageName(),
+                    request.getPageName(),
+                    request.getDropdownId()
+            }, null);
 
-            // Step 3: Git operations — add, commit, and push
             System.out.println("✅ Committing translation changes...");
             executeCommand(new String[]{"git", "add", "."}, repoDir);
             executeCommand(new String[]{"git", "commit", "-m", "Auto: Add translations at " + Instant.now()}, repoDir);
@@ -48,21 +67,21 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
             e.printStackTrace();
             throw new RuntimeException("❌ GitHub processing failed: " + e.getMessage(), e);
         } finally {
-            // Optional: Clean up cloned repo to avoid disk clutter
+            // === NEW: Cleanup cloned repo ===
             deleteDirectory(repoDir);
         }
     }
 
-    private void executeCommand(String[] command, File workingDir) throws IOException, InterruptedException {
-        // On Windows, replace "python3" with "python"
-        if (System.getProperty("os.name").toLowerCase().contains("win")) {
-            for (int i = 0; i < command.length; i++) {
-                if ("python3".equals(command[i])) {
-                    command[i] = "python";
-                }
-            }
+    private String resolvePythonInterpreter() {
+        // === NEW: Detect OS and adjust interpreter ===
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win") && "python3".equals(pythonInterpreter)) {
+            return "python";
         }
+        return pythonInterpreter;
+    }
 
+    private void executeCommand(String[] command, File workingDir) throws IOException, InterruptedException {
         System.out.println(">> Running: " + String.join(" ", command));
         if (workingDir != null) {
             System.out.println(">> In directory: " + workingDir.getAbsolutePath());
@@ -79,7 +98,6 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
         }
     }
 
-
     private void deleteDirectory(File directoryToBeDeleted) {
         if (directoryToBeDeleted != null && directoryToBeDeleted.exists()) {
             File[] allContents = directoryToBeDeleted.listFiles();
@@ -88,7 +106,9 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
                     deleteDirectory(file);
                 }
             }
-            directoryToBeDeleted.delete();
+            if (!directoryToBeDeleted.delete()) {
+                System.err.println("Warning: Failed to delete " + directoryToBeDeleted.getAbsolutePath());
+            }
         }
     }
 }

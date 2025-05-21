@@ -6,4 +6,6 @@ import java.util.List;
 public interface LanguageFacade {
 
     List<Language> getAllLanguages();
+
+    List<Language> getLanguagesByCustomerId(Integer customerId);
 }

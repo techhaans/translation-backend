@@ -1,11 +1,17 @@
 package com.domain.service;
 
-import com.domain.model.UserTable;
-
-import java.util.Optional;
+import com.domain.dto.*;
+import com.domain.model.User;
 
 public interface UserService {
-     Optional<UserTable> login(String name, String password, String role);
+     void registerCustomer(RegisterCustomerDTO dto);
+     void registerProofReader(RegisterProofReaderDTO dto);
+     String login(LoginDTO dto);
 
-     UserTable saveUsernameandpassword(UserTable userTable);
+     void forgotPassword(ForgotPasswordDTO dto);
+
+     void resetPassword(ResetPasswordDTO dto);
+
+     User getUserByEmail(String email);
 }
+

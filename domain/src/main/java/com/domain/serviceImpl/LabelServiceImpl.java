@@ -1,7 +1,8 @@
 package com.domain.serviceImpl;
 
-import com.domain.dto.LabelResponseDTO;
-import com.domain.dto.LabelTranslationResponseDTO;
+import com.domain.dto.response.LabelResponseDTO;
+import com.domain.dto.response.LabelTranslationResponseDTO;
+import com.domain.enums.Role;
 import com.domain.util.ChatGptTranslator;
 import com.domain.model.*;
 import com.domain.service.LabelService;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class LabelServiceImpl implements LabelService {
 
-    public static final String ADMIN_ROLE = "proof_reader";
+    public static final Role ADMIN_ROLE = Role.PROOFREADER;
 
 
     @Autowired
@@ -29,9 +30,6 @@ public class LabelServiceImpl implements LabelService {
 
     @Autowired
     private CustomerRepository customerRepository;
-
-    @Autowired
-    private LanguagesRepository languagesRepository;
 
     @Autowired
     private ProofReaderRepository proofReadersRepository;
@@ -50,6 +48,9 @@ public class LabelServiceImpl implements LabelService {
 
     @Override
     public LabelResponseDTO createOrUpdateLabels(UUID customerCuid, Map<String, String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            throw new IllegalArgumentException("Label key-value pairs are required and cannot be null or empty.");
+        }
         Customer customer = customerRepository.findByCuid(customerCuid)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
@@ -67,7 +68,7 @@ public class LabelServiceImpl implements LabelService {
         Map<String, Label> labelMap = labelRepository.findByCustomer_Cuid(customerCuid).stream()
                 .collect(Collectors.toMap(Label::getLabelKey, Function.identity()));
 
-        ProofReaders approvedBy = proofReadersRepository.findByRole(ADMIN_ROLE)
+        ProofReader approvedBy = proofReadersRepository.findByUser_Role(ADMIN_ROLE)
                 .orElseThrow(() -> new RuntimeException("No approver found"));
 
         // Save or update labels and default language translations
@@ -79,8 +80,8 @@ public class LabelServiceImpl implements LabelService {
                 Label newLabel = new Label();
                 newLabel.setLabelKey(labelKey);
                 newLabel.setLabelName(extractLabelNameFromKey(labelKey));
-               // newLabel.setCustomer(customer);
-                newLabel.setCustomerByCuid(customer);
+                newLabel.setCustomer(customer);
+              //  newLabel.setCustomerByCuid(customer);
                 newLabel.setCreatedDate(LocalDateTime.now());
                 newLabel.setUpdatedDate(LocalDateTime.now());
                 return labelRepository.save(newLabel);
@@ -186,7 +187,7 @@ public class LabelServiceImpl implements LabelService {
 
         // Build final response
         LabelResponseDTO response = new LabelResponseDTO();
-        response.setCuid(customerCuid);
+        response.setCustomerCuid(customerCuid);
         response.setDefaultLanguageCode(defaultLanguageCode);
         response.setLanguages(responseLanguages);
 
@@ -194,7 +195,49 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    public List<Label> getLabelsByCustomerCuid(UUID id) {
-        return labelRepository.findByCustomer_Cuid(id);
+    public LabelResponseDTO getLabelTranslationsByCustomer(UUID customerCuid) {
+        Customer customer = customerRepository.findByCuid(customerCuid)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        List<CustomerLang> customerLangs = customerLangRepository.findByCustomer_Cuid(customerCuid);
+        if (customerLangs.isEmpty()) {
+            throw new RuntimeException("No languages found for customer");
+        }
+
+        String defaultLanguageCode = customerLangs.stream()
+                .filter(cl -> Boolean.TRUE.equals(cl.getIsDefault()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Default language not set"))
+                .getLanguage()
+                .getLanguageKey();
+
+        List<LabelTranslation> allTranslations = labelTranslationRepository.findByLabel_Customer_Cuid(customerCuid);
+
+        // Group translations by language code
+        Map<String, Map<String, String>> languageTranslationMap = new HashMap<>();
+        for (LabelTranslation lt : allTranslations) {
+            String langCode = lt.getLanguageCode();
+            languageTranslationMap
+                    .computeIfAbsent(langCode, k -> new LinkedHashMap<>())
+                    .put(lt.getLabel().getLabelKey(), lt.getLabelTranslated());
+        }
+
+        // Prepare response
+        List<LabelTranslationResponseDTO> responseLanguages = new ArrayList<>();
+        for (Map.Entry<String, Map<String, String>> entry : languageTranslationMap.entrySet()) {
+            LabelTranslationResponseDTO dto = new LabelTranslationResponseDTO();
+            dto.setLanguageCode(entry.getKey());
+            dto.setTranslations(entry.getValue());
+            responseLanguages.add(dto);
+        }
+
+        LabelResponseDTO response = new LabelResponseDTO();
+        response.setCustomerCuid(customerCuid);
+        response.setDefaultLanguageCode(defaultLanguageCode);
+        response.setLanguages(responseLanguages);
+
+        return response;
     }
+
+
 }

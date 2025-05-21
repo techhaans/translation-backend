@@ -1,69 +1,33 @@
 package com.domain.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class GitHubRepoRequest {
+
+    @NotEmpty(message = "GitHub username is required")
     private String gitUsername;
+
+    @NotEmpty(message = "Personal access token is required")
     private String personalAccessToken;
+
+    @NotEmpty(message = "Repository URL is required")
     private String repoUrl;
+
+    @NotEmpty(message = "Branch is required")
     private String branch;
-    private String packageName;  // New field for package name
+
+    @NotEmpty(message = "Package name is required")
+    private String packageName;
+
+    @NotEmpty(message = "Page name is required")
     private String pageName;
-    private String dropdownId;   // New field for dropdown ID
 
-    // Getter and Setter methods
-
-    public String getGitUsername() {
-        return gitUsername;
-    }
-
-    public void setGitUsername(String gitUsername) {
-        this.gitUsername = gitUsername;
-    }
-
-    public String getPersonalAccessToken() {
-        return personalAccessToken;
-    }
-
-    public void setPersonalAccessToken(String personalAccessToken) {
-        this.personalAccessToken = personalAccessToken;
-    }
-
-    public String getRepoUrl() {
-        return repoUrl;
-    }
-
-    public void setRepoUrl(String repoUrl) {
-        this.repoUrl = repoUrl;
-    }
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
-
-    public String getPackageName() {   // Getter for packageName
-        return packageName;
-    }
-
-    public void setPackageName(String packageName) {   // Setter for packageName
-        this.packageName = packageName;
-    }
-
-    public String getDropdownId() {   // Getter for dropdownId
-        return dropdownId;
-    }
-
-    public void setDropdownId(String dropdownId) {   // Setter for dropdownId
-        this.dropdownId = dropdownId;
-    }
-
-    public String getPageName() {
-        return pageName;
-    }
-
-    public void setPageName(String pageName) {
-        this.pageName = pageName;
-    }
+    @NotEmpty(message = "Dropdown ID is required")
+    private String dropdownId;
 }

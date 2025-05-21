@@ -1,12 +1,14 @@
 package com.dc.api.controller;
 
 import com.dc.facade.fd.CustomerLangFacade;
-import com.domain.dto.CustomerLanguageResponseDTO;
+import com.domain.dto.CustomerLanguageRequestDTO;
+import com.domain.dto.response.CustomerLanguageResponseDTO;
+import com.domain.dto.response.ApiResponse;
+import com.domain.dto.response.ApiResponseBuilder;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,28 +16,25 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/customer/languages")
+@RequestMapping("/api/customer/languages")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
-@Tag(name = "Customer Language API", description = "Fetch customer's supported languages")
+@Tag(name = "Customer Language API", description = "Manage customer's supported languages")
 public class CustomerLangController {
 
     private final CustomerLangFacade customerLangFacade;
 
-    @Autowired
-    public CustomerLangController(CustomerLangFacade customerLangFacade) {
-        this.customerLangFacade = customerLangFacade;
+    @PostMapping
+    @Operation(summary = "Set Customer Languages", description = "Updates the supported languages for a customer")
+    public ResponseEntity<ApiResponse<String>> setLanguages(@Valid @RequestBody CustomerLanguageRequestDTO requestDTO) {
+        customerLangFacade.setCustomerLanguages(requestDTO);
+        return ResponseEntity.ok(ApiResponseBuilder.success(null, "Customer languages updated successfully."));
     }
 
-    @Operation(summary = "Get Customer Languages", description = "Returns a list of language codes and names for the given customer ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully fetched languages"),
-            @ApiResponse(responseCode = "400", description = "Invalid customer ID"),
-            @ApiResponse(responseCode = "404", description = "Customer not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping("/{customerUid}")
-    public ResponseEntity<List<CustomerLanguageResponseDTO>> getLanguages(@PathVariable UUID customerUid) {
+    @Operation(summary = "Get Customer Languages", description = "Returns a list of language codes and names for the given customer ID")
+    public ResponseEntity<ApiResponse<List<CustomerLanguageResponseDTO>>> getLanguages(@PathVariable UUID customerUid) {
         List<CustomerLanguageResponseDTO> languages = customerLangFacade.fetchCustomerLanguages(customerUid);
-        return ResponseEntity.ok(languages);
+        return ResponseEntity.ok(ApiResponseBuilder.success(languages, "Fetched customer languages successfully."));
     }
 }

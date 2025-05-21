@@ -1,6 +1,7 @@
 package com.dc.facadeImpl.fi;
 import com.dc.facade.fd.CustomerLangFacade;
-import com.domain.dto.CustomerLanguageResponseDTO;
+import com.domain.dto.CustomerLanguageRequestDTO;
+import com.domain.dto.response.CustomerLanguageResponseDTO;
 import com.domain.service.CustomerLangService;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,11 @@ public class CustomerLangFacadeImpl implements CustomerLangFacade {
     @Override
     public List<CustomerLanguageResponseDTO> fetchCustomerLanguages(UUID customerUid) {
         return customerLangService.getLanguagesByCustomerId(customerUid);
+    }
+
+    @Override
+    public void setCustomerLanguages(CustomerLanguageRequestDTO requestDTO) {
+        customerLangService.setCustomerLanguages(requestDTO);
     }
 }
 

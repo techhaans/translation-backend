@@ -12,7 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.domain.repo")
 @EntityScan(basePackages = "com.domain.model")
-@ComponentScan(basePackages = { "com.dc.facade.fd",
+@ComponentScan(basePackages = {
+		"com.dc.facade.fd",
 		"com.dc.api.controller",
 		"com.dc.facade.fd",
 		"com.dc.facadeImpl.fi",
@@ -23,7 +24,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 		"com.domain.util",
 		"com.domain.dto",
 		"com.domain.password",
-		"com.domain.config"
+		"com.domain.security",
+		"com.domain.enums",
+		"com.domain.config",
+		"com.domain.security"
 })
 public class Application {
 	public static void main(String[] args) {

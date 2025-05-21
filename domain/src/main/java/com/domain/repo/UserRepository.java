@@ -1,15 +1,13 @@
 package com.domain.repo;
-import com.domain.model.UserTable;
+
+import com.domain.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository
-public interface UserRepository extends JpaRepository<UserTable, Integer> {
-    Optional<UserTable> findByName(String name);
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
 
-    Optional<UserTable> findByNameAndPasswordAndRole(String name, String password, String role);
-
-    Optional<UserTable> findByNameAndRole(String name, String role);
+    Optional<User> findByResetToken(String token);
 }
