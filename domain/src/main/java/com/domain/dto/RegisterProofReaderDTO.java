@@ -40,7 +40,6 @@ public class RegisterProofReaderDTO {
     @NotBlank
     private String availability;
 
-    @NotNull(message = "Resume file must be uploaded")
     private MultipartFile resume;
 
     @AssertTrue(message = "Terms must be accepted")

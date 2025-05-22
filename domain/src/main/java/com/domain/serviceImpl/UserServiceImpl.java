@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepo;
     private final CustomerRepository customerRepo;
     private final ProofReaderRepository proofReaderRepo;
+    private final UserRepository  userRepository;
     private final MembershipRepository membershipRepo;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -78,6 +79,8 @@ public class UserServiceImpl implements UserService {
                 .membership(membership)
                 .build();
         customerRepo.save(customer);
+        emailService.sendCustomerRegistrationEmail(user.getEmail(), dto.getFullName());
+
     }
 
     @Override
@@ -92,7 +95,10 @@ public class UserServiceImpl implements UserService {
             throw new EmailAlreadyExistsException("Email already registered: " + dto.getEmail());
         }
 
-        String resumePath = saveResumeFile(dto.getResume());
+        String resumePath = null;
+        if (dto.getResume() != null && !dto.getResume().isEmpty()) {
+            resumePath = saveResumeFile(dto.getResume());
+        }
 
         User user = User.builder()
                 .email(dto.getEmail())
@@ -112,6 +118,7 @@ public class UserServiceImpl implements UserService {
                 .resumePath(resumePath)
                 .build();
         proofReaderRepo.save(proofReader);
+        emailService.sendProofReaderRegistrationEmail(user.getEmail(), dto.getFullName());
     }
 
     private String saveResumeFile(MultipartFile file) {
@@ -138,12 +145,22 @@ public class UserServiceImpl implements UserService {
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
             );
         } catch (BadCredentialsException ex) {
-            System.err.println("Login failed for email: " + loginDTO.getEmail()); // Use proper logger in production
+            System.err.println("Login failed for email: " + loginDTO.getEmail());
             throw new AuthenticationFailedException("Invalid email or password.");
         }
 
-        return jwtUtil.generateToken(loginDTO.getEmail());
+        // Fetch user from database
+        User user = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new AuthenticationFailedException("User not found"));
+
+        // Role validation
+        if (!user.getRole().name().equalsIgnoreCase(loginDTO.getRole().name())) {
+            throw new AuthenticationFailedException("Invalid role for this user.");
+        }
+
+        return jwtUtil.generateToken(user.getEmail()); // You can also include role in the token if needed
     }
+
 
     @Override
     public void forgotPassword(ForgotPasswordDTO dto) {

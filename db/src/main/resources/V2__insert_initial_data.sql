@@ -5,7 +5,7 @@ INSERT INTO membership (plan, price) VALUES
 ('BASIC_YEARLY', '$99/mth'),
 ('BUSINESS_YEARLY', '$149/mth');
 
-INSERT INTO language (lname, language_key) VALUES
+INSERT INTO language (language_name, language_key) VALUES
 ('Afar', 'aa'),
 ('Abkhazian', 'ab'),
 ('Avestan', 'ae'),
