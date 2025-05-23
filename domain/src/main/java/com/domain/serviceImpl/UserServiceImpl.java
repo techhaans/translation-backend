@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
                 .membership(membership)
                 .build();
         customerRepo.save(customer);
-        emailService.sendCustomerRegistrationEmail(user.getEmail(), dto.getFullName());
+        emailService.sendCustomerRegistrationEmail(dto.getEmail(), dto.getFullName());
 
     }
 
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService {
                 .resumePath(resumePath)
                 .build();
         proofReaderRepo.save(proofReader);
-        emailService.sendProofReaderRegistrationEmail(user.getEmail(), dto.getFullName());
+        emailService.sendProofReaderRegistrationEmail(dto.getEmail(), dto.getFullName());
     }
 
     private String saveResumeFile(MultipartFile file) {

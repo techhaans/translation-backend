@@ -26,7 +26,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 		"com.domain.password",
 		"com.domain.security",
 		"com.domain.enums",
-		"com.domain.config",
 		"com.domain.security"
 })
 public class Application {
