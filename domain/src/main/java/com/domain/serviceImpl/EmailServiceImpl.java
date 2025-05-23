@@ -19,7 +19,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendResetPasswordEmail(String to, String token) {
         String subject = "Password Reset Request";
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+        String resetLink = "https://techhaans.com/reset-password?token=" + token;
         String text = "Click the link to reset your password:\n" + resetLink;
 
         SimpleMailMessage message = new SimpleMailMessage();

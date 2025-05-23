@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/github")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://techhaans.com")
 @Tag(
         name = "GitHub Integration",
         description = "API to fetch a GitHub repository, translate its content, and push changes back to the repository."

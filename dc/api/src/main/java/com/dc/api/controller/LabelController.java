@@ -19,7 +19,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/labels")
 @Tag(name = "Label API", description = "Manage Labels and Translations")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://techhaans.com")
 @Validated
 public class LabelController {
 

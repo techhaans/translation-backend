@@ -18,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/customer/languages")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://techhaans.com")
 @Tag(name = "Customer Language API", description = "Manage customer's supported languages")
 public class CustomerLangController {
 

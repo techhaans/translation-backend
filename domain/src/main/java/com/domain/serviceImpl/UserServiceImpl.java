@@ -158,7 +158,7 @@ public class UserServiceImpl implements UserService {
         userRepo.save(user);
 
         // TODO: Send email with token (link) — placeholder
-        System.out.println("Reset link: http://localhost:3000/reset-password?token=" + token);
+        System.out.println("Reset link: https://techhaans.com/reset-password?token=" + token);
         emailService.sendResetPasswordEmail(user.getEmail(), token);
     }
 

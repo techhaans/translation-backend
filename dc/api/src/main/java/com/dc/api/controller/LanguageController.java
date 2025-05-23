@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/languages")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://techhaans.com")
 @Tag(
         name = "Language Management",
         description = "APIs for retrieving supported languages and languages by customer ID."

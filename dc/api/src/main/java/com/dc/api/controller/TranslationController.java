@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/translations")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://techhaans.com")
 @Tag(name = "Translation API", description = "Operations to fetch translations for customers")
 @Validated
 public class TranslationController {
