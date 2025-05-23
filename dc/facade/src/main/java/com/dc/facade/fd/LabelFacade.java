@@ -1,8 +1,13 @@
 package com.dc.facade.fd;
 
-import java.util.List;
+import com.domain.dto.response.LabelResponseDTO;
+
 import java.util.Map;
+import java.util.UUID;
 
 public interface LabelFacade {
-    void processLabels(Integer customerId, String defaultLanguage, List<String> languageList, Map<String, String> labelData);
+
+        LabelResponseDTO processLabels(UUID customerCuid, Map<String, String> labels);
+
+        LabelResponseDTO getLabelTranslationsByCustomer(UUID customerUId);
 }

@@ -1,102 +1,60 @@
 package com.domain.model;
 
+import com.domain.enums.AccountStatus;
 import jakarta.persistence.*;
+import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "customer")
 public class Customer {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int cid;
+    private Long id;
 
-    @Column(name = "cname", nullable = false)
-    private String cname;
+    @Column(name = "cuid", nullable = false, unique = true, updatable = false)
+    private UUID cuid;
 
-    @Column(name = "status")
-    private String status;
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(length = 100)
+    private String country;
+
+    @Column(name = "company_name", length = 100)
+    private String companyName;
+
+    @Column(name = "plan_expiry_date")
+    private LocalDate planExpiryDate;
+
+    @Column(name = "registration_date")
+    private LocalDate registrationDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", length = 20)
+    private AccountStatus accountStatus;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private UserTable user;
+    @JoinColumn(name = "membership_id")
+    private Membership membership;
 
-    @Column(name = "created_date")
-    private LocalDateTime createdDate;
-
-    @Column(name = "updated_date")
-    private LocalDateTime updatedDate;
-    // Constructors
-    public Customer() {
-    }
-
-    public Customer(int cid, String cname, String status, UserTable user, LocalDateTime createdDate, LocalDateTime updatedDate) {
-        this.cid = cid;
-        this.cname = cname;
-        this.status = status;
-        this.user = user;
-        this.createdDate = createdDate;
-        this.updatedDate = updatedDate;
-    }
-
-    public int getCid() {
-        return cid;
-    }
-
-    public void setCid(int cid) {
-        this.cid = cid;
-    }
-
-    public String getCname() {
-        return cname;
-    }
-
-    public void setCname(String cname) {
-        this.cname = cname;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public UserTable getUser() {
-        return user;
-    }
-
-    public void setUser(UserTable user) {
-        this.user = user;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public LocalDateTime getUpdatedDate() {
-        return updatedDate;
-    }
-
-    public void setUpdatedDate(LocalDateTime updatedDate) {
-        this.updatedDate = updatedDate;
-    }
-
-    @Override
-    public String toString() {
-        return "Customer{" +
-                "cid=" + cid +
-                ", cname='" + cname + '\'' +
-                ", status='" + status + '\'' +
-                ", user=" + user +
-                ", createdDate=" + createdDate +
-                ", updatedDate=" + updatedDate +
-                '}';
+    @PrePersist
+    private void generateCuid() {
+        if (this.cuid == null) {
+            this.cuid = UUID.randomUUID();
+        }
     }
 }

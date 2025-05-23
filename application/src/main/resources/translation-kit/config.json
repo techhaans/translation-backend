@@ -1,0 +1,12 @@
+{
+  "repoPath": "D:/new-test4",
+  "customerUId": "e028b0a5-4baa-4a76-88ad-c97a391091b9",
+  "packageFolder": "package",
+  "headerFileName": "header.html",
+  "backendUrl": "http://localhost:8082",
+  "translationScriptPath": "translation-kit/translation.js",
+  "i18nFolderName": "i18n",
+  "labelPostEndpoint": "/api/labels",
+  "languageFetchEndpoint": "/api/customer/languages",
+  "commitMessage": "Update i18n translations and HTML with dropdown"
+}
